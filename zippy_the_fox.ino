@@ -17,6 +17,10 @@
 #define RED_LED_RIGHT_ON	digitalWrite(RED_LED_RIGHT, HIGH)
 #define RED_LED_RIGHT_OFF	digitalWrite(RED_LED_RIGHT, LOW)
 
+// -- Buttons --
+#define LEFT_BUTTON_ON()	digitalRead(LEFT_BUTTON)
+#define RIGHT_BUTTON_ON()	digitalRead(RIGHT_BUTTON)
+
 // -- Motor Driver --
 #define ENABLE_STANDBY	digitalWrite(MOTOR_STANDBY_PIN, HIGH)
 #define DISABLE_STANDBY digitalWrite(MOTOR_STANDBY_PIN, LOW)
@@ -26,15 +30,14 @@
 #define FOUND_LEFT()		(ON_LINE(lineSensorValues[0]) && ON_LINE(lineSensorValues[1]) && ON_LINE(lineSensorValues[2]) && ON_LINE(lineSensorValues[3]) && ON_LINE(lineSensorValues[4]))
 #define FOUND_RIGHT()		(ON_LINE(lineSensorValues[7]) && ON_LINE(lineSensorValues[6]) && ON_LINE(lineSensorValues[5]) && ON_LINE(lineSensorValues[4]) && ON_LINE(lineSensorValues[3]))
 #define FOUND_STRAIGHT()	((ON_LINE(lineSensorValues[2]) || ON_LINE(lineSensorValues[3])) && (ON_LINE(lineSensorValues[4]) || ON_LINE(lineSensorValues[5])))
-#define FOUND_FRONT()		(ON_LINE(frontSensorValue[0]))
+#define FOUND_FRONT()		(ON_LINE(frontSensorValues[0]))
 
 /* 
 	Object Declarations
 */
 
 // -- Motors --
-motor motorLeft(LEFT_MOTOR_A, LEFT_MOTOR_B, LEFT_MOTOR_PWM, 4095);
-motor motorRight(RIGHT_MOTOR_A, RIGHT_MOTOR_B, RIGHT_MOTOR_PWM, 4095);
+motor motorLeft, motorRight;
 
 // -- Line Sensor --
 unsigned char lineSensorPins[] = { 33, 32, 31, 30, 29, 28, 27, 26 };
@@ -44,7 +47,7 @@ QTRSensorsRC lineSensor(lineSensorPins, LINE_NUMBER_OF_SENSORS, TIMEOUT, LINE_EM
 
 // -- Front Sensor --
 unsigned char frontSensorPins[] = { 24 };
-unsigned short frontSensorValue[FRONT_NUMBER_OF_SENSORS];
+unsigned short frontSensorValues[FRONT_NUMBER_OF_SENSORS];
 
 QTRSensorsRC frontSensor(frontSensorPins, FRONT_NUMBER_OF_SENSORS, TIMEOUT);
 
@@ -61,6 +64,9 @@ char path[30], simplifiedPath[30];
 unsigned int pathCounter = 0;
 unsigned int stringCounter = 0;
 unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
+
+// -- Robot Status --
+char robotState = IDLE;
 
 
 // decides which direction should the root turn
@@ -126,22 +132,21 @@ unsigned int readLineSensor()
 unsigned int readFrontSensor()
 {
 	if (WHITE_ON_BLACK)
-		return frontSensor.readLine(frontSensorValue, QTR_EMITTERS_ON, true);
+		return frontSensor.readLine(frontSensorValues, QTR_EMITTERS_ON, true);
 
 	else
-		return frontSensor.readLine(frontSensorValue);
+		return frontSensor.readLine(frontSensorValues);
 }
 
 void setup()
 {
+	analogWriteResolution(12);
+
 	if (DEBUG_CHANNEL == 1 || DEBUG_CHANNEL == 3)
 		Serial.begin(115200);
 
 	if (DEBUG_CHANNEL == 2 || DEBUG_CHANNEL == 3)
 		BLUETOOTH.begin(9600);
-
-	//12 bit width of analog write values
-	analogWriteResolution(12);
 
 	// pinMode Declarations
 	pinMode(MOTOR_STANDBY_PIN, OUTPUT);
@@ -151,32 +156,68 @@ void setup()
 	pinMode(RED_LED_LEFT, OUTPUT);
 	pinMode(RED_LED_RIGHT, OUTPUT);
 
+	pinMode(LEFT_BUTTON, INPUT);
+	pinMode(RIGHT_BUTTON, INPUT);
+
+	attachInterrupt(LEFT_BUTTON, leftButtonControl, RISING);
+	attachInterrupt(RIGHT_BUTTON, rightButtonControl, RISING);
+	
 	// motor initialisation
+	motorLeft.setPins(LEFT_MOTOR_B, LEFT_MOTOR_A, LEFT_MOTOR_PWM);
+	motorRight.setPins(RIGHT_MOTOR_B, RIGHT_MOTOR_A, RIGHT_MOTOR_PWM);
+
+	motorLeft.setMaxSpeed(SPEED_MAX);
+	motorRight.setMaxSpeed(SPEED_MAX);
+
 	motorLeft.initialise();
 	motorRight.initialise();
 
+	ENABLE_STANDBY;
+
 	initialiseBot();
+	
+	robotState = WORKING;
+}
+
+void leftButtonControl()
+{
+	initialiseBot();
+}
+
+void rightButtonControl()
+{
+	if (robotState == IDLE)
+	{
+		ENABLE_STANDBY;
+		robotState = WORKING;
+	}
+
+	else if (robotState == WORKING)
+	{
+		DISABLE_STANDBY;
+		robotState = IDLE;
+	}
 }
 
 void initialiseBot()
 {
-	GREEN_LED_LEFT_ON;
-	GREEN_LED_RIGHT_ON;
+	RED_LED_LEFT_ON;
+	RED_LED_RIGHT_ON;
 
 	// Calibrate sensors 
 	for (unsigned int i = 0; i < 80; i++)
 	{
 		if (i == 0 || i == 55)
-			turn('L', SPEED_CALIBRATE, 20);
+			turn('L', SPEED_CALIBRATE, 10);
 		if (i == 20)
-			turn('R', SPEED_CALIBRATE, 20);
+			turn('R', SPEED_CALIBRATE, 10);
 
-		lineSensor.calibrate();
 		frontSensor.calibrate();
+		lineSensor.calibrate();
 	}
 
-	GREEN_LED_LEFT_OFF;
-	GREEN_LED_RIGHT_OFF;
+	RED_LED_LEFT_OFF;
+	RED_LED_RIGHT_OFF;
 }
 
 void showSensorValues()
@@ -184,7 +225,8 @@ void showSensorValues()
 	if (DEBUG_CHANNEL == 1 || DEBUG_CHANNEL == 3)
 	{
 		Serial.print("Front : ");
-		Serial.print(frontSensorValue[0]);
+		Serial.print(frontSensorValues[0]);
+		Serial.print(" ");
 
 		for (unsigned char i = 0; i < LINE_NUMBER_OF_SENSORS; i++)
 		{
@@ -198,7 +240,7 @@ void showSensorValues()
 	if (DEBUG_CHANNEL == 2 || DEBUG_CHANNEL == 3)
 	{
 		BLUETOOTH.print("Front : ");
-		BLUETOOTH.print(frontSensorValue[0]);
+		BLUETOOTH.print(frontSensorValues[0]);
 
 		for (unsigned char i = 0; i < LINE_NUMBER_OF_SENSORS; i++)
 		{
@@ -212,14 +254,22 @@ void showSensorValues()
 
 void loop()
 {
-	enterMaze();
+	/*DISABLE_STANDBY;
+
+	readFrontSensor();
+	readLineSensor();
+
+	showSensorValues();*/
+	/*enterMaze();
 
 	RED_LED_LEFT_ON;
 	RED_LED_RIGHT_ON;
 
 	reducePath();
 
-	exitMaze();
+	exitMaze();*/
+
+	runPID(2048);
 }
 
 void enterMaze()
@@ -264,7 +314,6 @@ void enterMaze()
 		path[pathCounter++] = direction;
 	}
 }
-
 
 void reducePath()
 {
@@ -320,7 +369,7 @@ void reducePath()
 
 void exitMaze()
 {
-	while (1)
+	while (true)
 	{
 		foundLeft = 0, foundStraight = 0, foundRight = 0;
 
@@ -365,10 +414,9 @@ void exitMaze()
 
 void runPID(unsigned int _maxSpeed)
 {
-	while (1)
+	while (true)
 	{
 		position = readLineSensor();
-		readFrontSensor();
 
 		if (FOUND_LEFT() || FOUND_RIGHT())
 			break;

@@ -12,6 +12,13 @@
 #define GREEN_LED_LEFT	16
 #define GREEN_LED_RIGHT 15
 
+// -- Buttons --
+#define LEFT_BUTTON		18
+#define RIGHT_BUTTON	17
+
+// -- Buzzer --
+#define BUZZER 22
+
 // -- Sensors --
 // Common
 #define TIMEOUT 2500
@@ -44,12 +51,16 @@
 // 1 for usb debugging
 // 2 for bluetooth debugging
 // 3 for both usb and bluetooth
-#define DEBUG_CHANNEL 0
+#define DEBUG_CHANNEL 1
 
 // 0 for sensor values
 // 
 #define DEBUG_MODE 0
 
+
+// -- Robot State Variables --
+#define WORKING 1
+#define IDLE	0
 
 // -- Sensors --
 #define BLACK_ON_WHITE	0
@@ -57,10 +68,11 @@
 #define COMPARE			200
 
 // -- Speed Limits --
+#define SPEED_MAX		2048
 #define SPEED_MAX_ENTRY	2048
 #define SPEED_MAX_EXIT	2048
-#define SPEED_CALIBRATE	786
-#define SPEED_TURN		1200
+#define SPEED_CALIBRATE	512
+#define SPEED_TURN		1024
 
 // -- PID constants --
 #define KP	2
