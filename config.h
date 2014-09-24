@@ -55,7 +55,7 @@
 
 // 0 for sensor values
 // 
-#define DEBUG_MODE 0
+#define DEBUG_MODE 2
 
 
 // -- Robot State Variables --
@@ -71,8 +71,8 @@
 #define SPEED_MAX		2048
 #define SPEED_MAX_ENTRY	2048
 #define SPEED_MAX_EXIT	2048
-#define SPEED_CALIBRATE	512
-#define SPEED_TURN		1024
+#define SPEED_CALIBRATE	650
+#define SPEED_TURN		1528
 
 // -- PID constants --
 #define KP	2
@@ -80,4 +80,4 @@
 #define KD	80
 
 // -- Delays --
-#define DELAY_TURN 170
+#define DELAY_TURN 165

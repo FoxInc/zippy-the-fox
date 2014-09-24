@@ -163,8 +163,8 @@ void setup()
 	attachInterrupt(RIGHT_BUTTON, rightButtonControl, RISING);
 	
 	// motor initialisation
-	motorLeft.setPins(LEFT_MOTOR_B, LEFT_MOTOR_A, LEFT_MOTOR_PWM);
-	motorRight.setPins(RIGHT_MOTOR_B, RIGHT_MOTOR_A, RIGHT_MOTOR_PWM);
+	motorLeft.setPins(LEFT_MOTOR_A, LEFT_MOTOR_B, LEFT_MOTOR_PWM);
+	motorRight.setPins(RIGHT_MOTOR_A, RIGHT_MOTOR_B, RIGHT_MOTOR_PWM);
 
 	motorLeft.setMaxSpeed(SPEED_MAX);
 	motorRight.setMaxSpeed(SPEED_MAX);
@@ -205,11 +205,11 @@ void initialiseBot()
 	RED_LED_RIGHT_ON;
 
 	// Calibrate sensors 
-	for (unsigned int i = 0; i < 80; i++)
+	for (unsigned int i = 0; i < 67; i++)
 	{
-		if (i == 0 || i == 55)
+		if (i == 0 || i == 50)
 			turn('L', SPEED_CALIBRATE, 10);
-		if (i == 20)
+		if (i == 18)
 			turn('R', SPEED_CALIBRATE, 10);
 
 		frontSensor.calibrate();
@@ -254,22 +254,14 @@ void showSensorValues()
 
 void loop()
 {
-	/*DISABLE_STANDBY;
-
-	readFrontSensor();
-	readLineSensor();
-
-	showSensorValues();*/
-	/*enterMaze();
+	enterMaze();
 
 	RED_LED_LEFT_ON;
 	RED_LED_RIGHT_ON;
 
 	reducePath();
 
-	exitMaze();*/
-
-	runPID(2048);
+	exitMaze();
 }
 
 void enterMaze()
@@ -279,8 +271,6 @@ void enterMaze()
 		foundLeft = 0, foundStraight = 0, foundRight = 0;
 
 		runPID(SPEED_MAX_ENTRY);		
-
-		turn('S', 1024, 10);
 
 		for (unsigned int i = 0; i < 3; i++)
 		{
@@ -301,6 +291,7 @@ void enterMaze()
 
 			if (FOUND_FRONT())
 			{
+				turn('S', 1024, 20);
 				path[pathCounter++] = 'J';
 				path[pathCounter] = '\0';
 
@@ -349,9 +340,8 @@ void reducePath()
 			simplifiedPath[i + 2] = 'L';
 			simplifiedPath[i + 3] = 'O';
 			simplifiedPath[i + 4] = 'O';
-
-
 		}
+
 		if (simplifiedPath[i] == 'R' && simplifiedPath[i + 1] == 'R' && simplifiedPath[i + 2] == 'R' && simplifiedPath[i + 3] == 'R' && simplifiedPath[i + 4] == 'L')
 		{
 			simplifiedPath[i] = 'L';
@@ -359,8 +349,6 @@ void reducePath()
 			simplifiedPath[i + 2] = 'R';
 			simplifiedPath[i + 3] = 'O';
 			simplifiedPath[i + 4] = 'O';
-
-
 		}
 	}
 
@@ -374,7 +362,7 @@ void exitMaze()
 		foundLeft = 0, foundStraight = 0, foundRight = 0;
 
 		runPID(SPEED_MAX_EXIT);
-		
+
 		for (unsigned int i = 0; i < 3; i++)
 		{
 			position = readLineSensor();
@@ -412,7 +400,7 @@ void exitMaze()
 }
 
 
-void runPID(unsigned int _maxSpeed)
+void runPID(int _maxSpeed)
 {
 	while (true)
 	{
