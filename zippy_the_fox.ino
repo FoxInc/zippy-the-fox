@@ -1,6 +1,7 @@
 // Included Libraries
 #include <Motor.h>
 #include <QTRSensors_teensy3.h>
+#include <Encoder.h>
 #include "config.h"
 
 /*
@@ -39,6 +40,9 @@
 // -- Motors --
 motor motorLeft, motorRight;
 
+// -- Encoders --
+Encoder motorEncoder(11, 12);
+
 // -- Line Sensor --
 unsigned char lineSensorPins[] = { 33, 32, 31, 30, 29, 28, 27, 26 };
 unsigned short lineSensorValues[LINE_NUMBER_OF_SENSORS];
@@ -68,6 +72,8 @@ unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
 // -- Robot Status --
 char robotState = IDLE;
 
+// -- Encoder --
+long turnDistance[30], nextTurnDistance = -999;
 
 // decides which direction should the root turn
 char selectTurn(unsigned char _foundLeft, unsigned char _foundRight, unsigned char _foundStraight)
@@ -287,45 +293,54 @@ void loop()
 
 void enterMaze()
 {
+	motorEncoder.write(0);
+
 	while (1)
 	{
+		char junctionFlag = 0;
 		foundLeft = 0, foundStraight = 0, foundRight = 0;
 
 		runPID(SPEED_MAX_ENTRY);
 
-		for (unsigned int i = 0; i < 3; i++)
+		turnDistance[pathCounter] = motorEncoder.read();
+
+		turn('S', 512, 0);
+
+		readFrontSensor();
+		readLineSensor();
+
+		do
 		{
-			delayMicroseconds(25);
-			position = readLineSensor();
+			if (!ON_LINE(lineSensorValues[0]) && !ON_LINE(lineSensorValues[7]))
+			{
+				junctionFlag = 1;
+				break;
+			}
+
+			readFrontSensor();
+			readLineSensor();
 
 			if (FOUND_LEFT())
 				foundLeft = 1;
 			if (FOUND_RIGHT())
 				foundRight = 1;
-		}
-		
+		} while (FOUND_FRONT());
 
-		if (foundLeft && foundRight)
+		if (junctionFlag && foundLeft && foundRight)
 		{
-			GREEN_LED_LEFT_ON;
-			GREEN_LED_RIGHT_ON;
 			turn('S', 1024, 100);
 
-			readFrontSensor();
+			turn('S', 1024, 20);
+			path[pathCounter++] = 'J';
+			path[pathCounter] = '\0';
 
-			if (FOUND_FRONT())
-			{
-				turn('S', 1024, 20);
-				path[pathCounter++] = 'J';
-				path[pathCounter] = '\0';
-
-				break;
-			}
-
+			break;
 		}
 
 		char direction = selectTurn(foundLeft, foundRight, foundStraight);
 		turn(direction, SPEED_TURN, DELAY_TURN);
+
+		motorEncoder.write(0);
 
 		path[pathCounter++] = direction;
 	}

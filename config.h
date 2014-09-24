@@ -51,7 +51,7 @@
 // 1 for usb debugging
 // 2 for bluetooth debugging
 // 3 for both usb and bluetooth
-#define DEBUG_CHANNEL 0
+#define DEBUG_CHANNEL 1
 
 // 0 for sensor values
 // 
