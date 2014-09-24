@@ -181,22 +181,43 @@ void setup()
 
 void leftButtonControl()
 {
-	initialiseBot();
+	unsigned int counter = 0;
+	while (LEFT_BUTTON_ON())
+	{
+		delay(10);
+		counter++;
+	}
+
+	if (counter > 5)
+	{
+		initialiseBot();
+	}
 }
 
 void rightButtonControl()
 {
-	if (robotState == IDLE)
+	int counter = 0;
+
+	while (RIGHT_BUTTON_ON())
 	{
-		ENABLE_STANDBY;
-		robotState = WORKING;
+		delay(10);
+		counter++;
 	}
 
-	else if (robotState == WORKING)
+	if (counter > 5)
 	{
-		DISABLE_STANDBY;
-		robotState = IDLE;
-	}
+		if (robotState == IDLE)
+		{
+			ENABLE_STANDBY;
+			robotState = WORKING;
+		}
+
+		else if (robotState == WORKING)
+		{
+			DISABLE_STANDBY;
+			robotState = IDLE;
+		}
+	}	
 }
 
 void initialiseBot()
@@ -270,10 +291,11 @@ void enterMaze()
 	{
 		foundLeft = 0, foundStraight = 0, foundRight = 0;
 
-		runPID(SPEED_MAX_ENTRY);		
+		runPID(SPEED_MAX_ENTRY);
 
 		for (unsigned int i = 0; i < 3; i++)
 		{
+			delayMicroseconds(25);
 			position = readLineSensor();
 
 			if (FOUND_LEFT())
@@ -285,7 +307,9 @@ void enterMaze()
 
 		if (foundLeft && foundRight)
 		{
-			delay(10);
+			GREEN_LED_LEFT_ON;
+			GREEN_LED_RIGHT_ON;
+			turn('S', 1024, 100);
 
 			readFrontSensor();
 
@@ -297,6 +321,7 @@ void enterMaze()
 
 				break;
 			}
+
 		}
 
 		char direction = selectTurn(foundLeft, foundRight, foundStraight);

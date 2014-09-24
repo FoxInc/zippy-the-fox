@@ -51,11 +51,11 @@
 // 1 for usb debugging
 // 2 for bluetooth debugging
 // 3 for both usb and bluetooth
-#define DEBUG_CHANNEL 1
+#define DEBUG_CHANNEL 0
 
 // 0 for sensor values
 // 
-#define DEBUG_MODE 2
+#define DEBUG_MODE 0
 
 
 // -- Robot State Variables --
@@ -65,14 +65,14 @@
 // -- Sensors --
 #define BLACK_ON_WHITE	0
 #define WHITE_ON_BLACK	1
-#define COMPARE			200
+#define COMPARE			250
 
 // -- Speed Limits --
 #define SPEED_MAX		2048
 #define SPEED_MAX_ENTRY	2048
 #define SPEED_MAX_EXIT	2048
 #define SPEED_CALIBRATE	650
-#define SPEED_TURN		1528
+#define SPEED_TURN		1200
 
 // -- PID constants --
 #define KP	2
@@ -80,4 +80,4 @@
 #define KD	80
 
 // -- Delays --
-#define DELAY_TURN 165
+#define DELAY_TURN 190
