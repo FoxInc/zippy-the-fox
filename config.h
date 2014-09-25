@@ -58,7 +58,7 @@
 #define DEBUG_MODE 0
 
 // -- Encoder --
-#define DISTANCE_TO_TURN 600
+#define DISTANCE_TO_TURN 500
 #define TURN_APPROACH_SPEED 2048
 
 // -- Robot State Variables --
@@ -78,9 +78,13 @@
 #define SPEED_TURN		1200
 
 // -- PID constants --
-#define KP	2
-#define KI	0
-#define KD	80
+#define KP_IN	2
+#define KI_IN	0
+#define KD_IN	100
+
+#define KP_OUT	20
+#define KI_OUT	0
+#define KD_OUT	300
 
 // -- Delays --
 #define DELAY_TURN 190

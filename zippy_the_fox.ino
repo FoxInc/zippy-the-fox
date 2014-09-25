@@ -279,18 +279,6 @@ void showSensorValues()
 	}
 }
 
-void loop()
-{
-	enterMaze();
-
-	RED_LED_LEFT_ON;
-	RED_LED_RIGHT_ON;
-
-	reducePath();
-
-	exitMaze();
-}
-
 void runPID(int _maxSpeed, unsigned char _adaptiveSpeed = 0)
 {
 	int _runSpeed = _maxSpeed;
@@ -332,7 +320,11 @@ void runPID(int _maxSpeed, unsigned char _adaptiveSpeed = 0)
 		lastProportional = proportional;
 		integral += proportional;
 
-		control = KP * proportional + KI * integral + KD * derivative;
+		if (_adaptiveSpeed)
+			control = KP_OUT * proportional + KI_OUT * integral + KD_OUT * derivative;
+
+		else
+			control = KP_IN * proportional + KI_IN * integral + KD_IN * derivative;
 
 		if (DEBUG_MODE == 2)
 		{
@@ -360,6 +352,19 @@ void runPID(int _maxSpeed, unsigned char _adaptiveSpeed = 0)
 		}
 	}
 }
+
+void loop()
+{
+	enterMaze();
+
+	RED_LED_LEFT_ON;
+	RED_LED_RIGHT_ON;
+
+	reducePath();
+
+	exitMaze();
+}
+
 
 void enterMaze()
 {
@@ -411,6 +416,8 @@ void enterMaze()
 		turn(direction, SPEED_TURN, DELAY_TURN);
 
 		motorEncoder.write(0);
+
+		turn('S', 1024, 50);
 
 		path[pathCounter++] = direction;
 	}
@@ -522,6 +529,8 @@ void exitMaze()
 
 			else
 				turn(simplifiedPath[stringCounter++], SPEED_TURN, DELAY_TURN);
+
+			turn('S', 1024, 50);
 		}
 	}
 }
