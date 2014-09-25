@@ -13,8 +13,8 @@
 #define GREEN_LED_RIGHT 15
 
 // -- Buttons --
-#define LEFT_BUTTON		18
-#define RIGHT_BUTTON	17
+#define LEFT_BUTTON		17
+#define RIGHT_BUTTON	18
 
 // -- Buzzer --
 #define BUZZER 22
@@ -58,7 +58,7 @@
 #define DEBUG_MODE 0
 
 // -- Encoder --
-#define DISTANCE_TO_TURN 500
+#define DISTANCE_TO_TURN 600
 #define TURN_APPROACH_SPEED 2048
 
 // -- Robot State Variables --

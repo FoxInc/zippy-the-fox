@@ -212,17 +212,12 @@ void rightButtonControl()
 
 	if (counter > 5)
 	{
-		if (robotState == IDLE)
-		{
-			ENABLE_STANDBY;
-			robotState = WORKING;
-		}
+		DISABLE_STANDBY;
+		delay(500);
+		ENABLE_STANDBY;
 
-		else if (robotState == WORKING)
-		{
-			DISABLE_STANDBY;
-			robotState = IDLE;
-		}
+		reducePath();
+		exitMaze();
 	}	
 }
 
@@ -364,7 +359,6 @@ void loop()
 
 	exitMaze();
 }
-
 
 void enterMaze()
 {
