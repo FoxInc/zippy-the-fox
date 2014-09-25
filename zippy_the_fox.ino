@@ -73,7 +73,7 @@ unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
 char robotState = IDLE;
 
 // -- Encoder --
-long turnDistance[30], nextTurnDistance = -999;
+long entryTurnDistance[30], exitTurnDistance[30], nextTurnDistance = -999;
 
 // decides which direction should the root turn
 char selectTurn(unsigned char _foundLeft, unsigned char _foundRight, unsigned char _foundStraight)
@@ -291,6 +291,76 @@ void loop()
 	exitMaze();
 }
 
+void runPID(int _maxSpeed, unsigned char _adaptiveSpeed = 0)
+{
+	int _runSpeed = _maxSpeed;
+
+	while (true)
+	{
+		if (_adaptiveSpeed)
+		{
+			if (stringCounter == 0)
+			{
+				_runSpeed = TURN_APPROACH_SPEED;
+			}
+
+			else
+			{
+				if (exitTurnDistance[stringCounter - 1] - motorEncoder.read() < DISTANCE_TO_TURN)
+				{
+					_runSpeed = TURN_APPROACH_SPEED;
+				}
+
+				else
+				{
+					_runSpeed = _maxSpeed;
+				}
+			}
+		}
+
+		position = readLineSensor();
+
+		if (FOUND_LEFT() || FOUND_RIGHT())
+			break;
+
+		if (DEBUG_MODE == 1)
+			showSensorValues();
+
+		proportional = position - 3500;
+
+		derivative = proportional - lastProportional;
+		lastProportional = proportional;
+		integral += proportional;
+
+		control = KP * proportional + KI * integral + KD * derivative;
+
+		if (DEBUG_MODE == 2)
+		{
+			Serial.print("Control  ");
+			Serial.print(control);
+			Serial.print(" Position  ");
+			Serial.print(proportional);
+			Serial.println("  ");
+		}
+
+		if (control > _runSpeed)
+			control = _runSpeed;
+		if (control < -_runSpeed)
+			control = -_runSpeed;
+
+		if (control < 0)
+		{
+			motorLeft.write(_runSpeed + control);
+			motorRight.write(_runSpeed);
+		}
+		else
+		{
+			motorLeft.write(_runSpeed);
+			motorRight.write(_runSpeed - control);
+		}
+	}
+}
+
 void enterMaze()
 {
 	motorEncoder.write(0);
@@ -302,7 +372,7 @@ void enterMaze()
 
 		runPID(SPEED_MAX_ENTRY);
 
-		turnDistance[pathCounter] = motorEncoder.read();
+		entryTurnDistance[pathCounter] = motorEncoder.read();
 
 		turn('S', 512, 0);
 
@@ -353,10 +423,15 @@ void reducePath()
 
 	// Add the last square's turns as it is
 	for (i = 1; i <= 3; i++)
+	{
+		exitTurnDistance[stringCounter] = entryTurnDistance[pathCounter - 1 - i];
 		simplifiedPath[stringCounter++] = path[pathCounter - 1 - i];
+	}
 
 	for (i = pathCounter - 5; i >= 0; i--)
 	{
+		exitTurnDistance[stringCounter] = entryTurnDistance[i];
+
 		switch (path[i])
 		{
 		case 'L':
@@ -380,6 +455,11 @@ void reducePath()
 			simplifiedPath[i + 2] = 'L';
 			simplifiedPath[i + 3] = 'O';
 			simplifiedPath[i + 4] = 'O';
+
+			exitTurnDistance[i + 1] /= 2;
+			exitTurnDistance[i + 2] = exitTurnDistance[i + 4];
+			exitTurnDistance[i + 3] = 0;
+			exitTurnDistance[i + 4] = 0;
 		}
 
 		if (simplifiedPath[i] == 'R' && simplifiedPath[i + 1] == 'R' && simplifiedPath[i + 2] == 'R' && simplifiedPath[i + 3] == 'R' && simplifiedPath[i + 4] == 'L')
@@ -389,6 +469,11 @@ void reducePath()
 			simplifiedPath[i + 2] = 'R';
 			simplifiedPath[i + 3] = 'O';
 			simplifiedPath[i + 4] = 'O';
+
+			exitTurnDistance[i + 1] /= 2;
+			exitTurnDistance[i + 2] = exitTurnDistance[i + 4];
+			exitTurnDistance[i + 3] = 0;
+			exitTurnDistance[i + 4] = 0;
 		}
 	}
 
@@ -401,7 +486,9 @@ void exitMaze()
 	{
 		foundLeft = 0, foundStraight = 0, foundRight = 0;
 
-		runPID(SPEED_MAX_EXIT);
+		motorEncoder.write(0);
+
+		runPID(SPEED_MAX_EXIT, 1);
 
 		for (unsigned int i = 0; i < 3; i++)
 		{
@@ -435,54 +522,6 @@ void exitMaze()
 
 			else
 				turn(simplifiedPath[stringCounter++], SPEED_TURN, DELAY_TURN);
-		}
-	}
-}
-
-
-void runPID(int _maxSpeed)
-{
-	while (true)
-	{
-		position = readLineSensor();
-
-		if (FOUND_LEFT() || FOUND_RIGHT())
-			break;
-
-		if (DEBUG_MODE == 1)
-			showSensorValues();
-
-		proportional = position - 3500;
-
-		derivative = proportional - lastProportional;
-		lastProportional = proportional;
-		integral += proportional;
-
-		control = KP * proportional + KI * integral + KD * derivative;
-
-		if (DEBUG_MODE == 2)
-		{
-			Serial.print("Control  ");
-			Serial.print(control);
-			Serial.print(" Position  ");
-			Serial.print(proportional);
-			Serial.println("  ");
-		}
-
-		if (control > _maxSpeed)
-			control = _maxSpeed;
-		if (control < -_maxSpeed)
-			control = -_maxSpeed;
-
-		if (control < 0)
-		{
-			motorLeft.write(_maxSpeed + control);
-			motorRight.write(_maxSpeed);
-		}
-		else
-		{
-			motorLeft.write(_maxSpeed);
-			motorRight.write(_maxSpeed - control);
 		}
 	}
 }

@@ -57,6 +57,9 @@
 // 
 #define DEBUG_MODE 0
 
+// -- Encoder --
+#define DISTANCE_TO_TURN 600
+#define TURN_APPROACH_SPEED 2048
 
 // -- Robot State Variables --
 #define WORKING 1
@@ -70,7 +73,7 @@
 // -- Speed Limits --
 #define SPEED_MAX		2048
 #define SPEED_MAX_ENTRY	2048
-#define SPEED_MAX_EXIT	2048
+#define SPEED_MAX_EXIT	3192
 #define SPEED_CALIBRATE	650
 #define SPEED_TURN		1200
 
