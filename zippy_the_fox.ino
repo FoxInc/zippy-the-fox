@@ -315,12 +315,12 @@ void runPID(int _maxSpeed, unsigned char _adaptiveSpeed = 0)
 			showSensorValues();
 
 		proportional = position - 3500;
-
+	
 		derivative = proportional - lastProportional;
 		lastProportional = proportional;
 		integral += proportional;
 
-		if (_adaptiveSpeed)
+		if (_adaptiveSpeed )
 			control = KP_OUT * proportional + KI_OUT * integral + KD_OUT * derivative;
 
 		else

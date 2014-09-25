@@ -80,11 +80,11 @@
 // -- PID constants --
 #define KP_IN	2
 #define KI_IN	0
-#define KD_IN	100
+#define KD_IN	80
 
-#define KP_OUT	20
+#define KP_OUT	2
 #define KI_OUT	0
-#define KD_OUT	300
+#define KD_OUT	150
 
 // -- Delays --
 #define DELAY_TURN 190
