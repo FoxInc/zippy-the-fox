@@ -179,6 +179,8 @@ void setup()
 	motorLeft.initialise();
 	motorRight.initialise();
 
+	delay(500);
+
 	ENABLE_STANDBY;
 
 	initialiseBot();
