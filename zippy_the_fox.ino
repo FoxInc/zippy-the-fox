@@ -71,6 +71,7 @@ unsigned char foundLeft = 0, foundStraight = 0, foundRight = 0;
 
 // -- Robot Status --
 char robotState = IDLE;
+char restartExitMaze = 0;
 
 // -- Encoder --
 long entryTurnDistance[30], exitTurnDistance[30], nextTurnDistance = -999;
@@ -181,8 +182,10 @@ void setup()
 	ENABLE_STANDBY;
 
 	initialiseBot();
+
+	DISABLE_STANDBY;
 	
-	robotState = WORKING;
+	robotState = IDLE;
 }
 
 void leftButtonControl()
@@ -213,11 +216,16 @@ void rightButtonControl()
 	if (counter > 5)
 	{
 		DISABLE_STANDBY;
-		delay(500);
-		ENABLE_STANDBY;
+		RED_LED_LEFT_OFF;
+		RED_LED_RIGHT_OFF;
 
-		reducePath();
-		exitMaze();
+		delay(500);
+		
+		ENABLE_STANDBY;
+		RED_LED_RIGHT_ON;
+		RED_LED_LEFT_ON;
+
+		restartExitMaze = 1;
 	}	
 }
 
@@ -280,6 +288,10 @@ void runPID(int _maxSpeed, unsigned char _adaptiveSpeed = 0)
 
 	while (true)
 	{
+		if (restartExitMaze)
+		{
+			exitMaze();
+		}
 		if (_adaptiveSpeed)
 		{
 			if (stringCounter == 0)
@@ -350,8 +362,9 @@ void runPID(int _maxSpeed, unsigned char _adaptiveSpeed = 0)
 
 void loop()
 {
+	ENABLE_STANDBY;
 	enterMaze();
-
+	
 	RED_LED_LEFT_ON;
 	RED_LED_RIGHT_ON;
 
@@ -485,6 +498,12 @@ void exitMaze()
 {
 	while (true)
 	{
+		if (restartExitMaze)
+		{
+			stringCounter = 0;
+			restartExitMaze = 0;
+		}
+
 		foundLeft = 0, foundStraight = 0, foundRight = 0;
 
 		motorEncoder.write(0);
@@ -514,6 +533,13 @@ void exitMaze()
 
 				while (1)
 				{
+					if (restartExitMaze)
+					{
+						RED_LED_LEFT_ON;
+						RED_LED_RIGHT_ON;
+						exitMaze();
+					}
+
 					RED_LED_LEFT_OFF;
 					RED_LED_RIGHT_OFF;
 					GREEN_LED_LEFT_ON;
